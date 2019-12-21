@@ -4,6 +4,7 @@ from PyQt5.QtGui import QGuiApplication, QColor, QCursor, QPainter, QPen
 from PyQt5.QtWidgets import QWidget, QApplication
 import ui_color_picker
 import BindWindow
+import win32api
 
 
 class ColorPicker(QWidget):
@@ -51,17 +52,23 @@ class ColorPicker(QWidget):
         pix_map_resized = self.pix_map.scaled(204, 204)
         self.ui.label_display.setPixmap(pix_map_resized)
 
-    def keyPressEvent(self, event):
+    def keyReleaseEvent(self, event):
         if event.modifiers() != Qt.ControlModifier:
             return
+
         line_edit = None
-        r, g, b, _ = self.current_color.getRgb()
-        color_name = self.current_color.name().upper()
+        x = self.current_point.x()
+        y = self.current_point.y()
 
-        text_color = QColor(255 - r, 255 - g, 255 - b)
-        text_color_name = text_color.name().upper()
-
-        if event.key() == Qt.Key_1:
+        if event.key() == Qt.Key_Left:
+            win32api.SetCursorPos((x - 1, y))
+        elif event.key() == Qt.Key_Right:
+            win32api.SetCursorPos((x + 1, y))
+        elif event.key() == Qt.Key_Up:
+            win32api.SetCursorPos((x, y - 1))
+        elif event.key() == Qt.Key_Down:
+            win32api.SetCursorPos((x, y + 1))
+        elif event.key() == Qt.Key_1:
             line_edit = self.ui.lineEdit_ctrl_1
         elif event.key() == Qt.Key_2:
             line_edit = self.ui.lineEdit_ctrl_2
@@ -71,9 +78,13 @@ class ColorPicker(QWidget):
             line_edit = self.ui.lineEdit_ctrl_4
         elif event.key() == Qt.Key_5:
             line_edit = self.ui.lineEdit_ctrl_5
+
         if line_edit is not None:
-            x = self.current_point.x()
-            y = self.current_point.y()
+            r, g, b, _ = self.current_color.getRgb()
+            color_name = self.current_color.name().upper()
+            text_color = QColor(255 - r, 255 - g, 255 - b)
+            text_color_name = text_color.name().upper()
+
             if self.client_rect is not None:
                 x = x - self.client_rect[0]
                 y = y - self.client_rect[1]
