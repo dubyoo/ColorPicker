@@ -16,7 +16,7 @@ class ColorPicker(QWidget):
         self.timer.start(100)
         self.ui.pushButton.clicked.connect(self.on_push_button_clicked)
         self.child_window = BindWindow.BindWindow(self)
-        self.bind_window_rect = None
+        self.client_rect = None
         self.current_color = None
         self.current_point = None
         self.pix_map = None
@@ -34,9 +34,9 @@ class ColorPicker(QWidget):
                 self.current_point = point
                 self.ui.label_color_value.setText('%s' % color.name().upper())
                 self.ui.label_absolute_pos_value.setText('%d, %d' % (point.x(), point.y()))
-                if self.bind_window_rect is not None:
-                    relative_x = point.x() - self.bind_window_rect[0]
-                    relative_y = point.y() - self.bind_window_rect[1]
+                if self.client_rect is not None:
+                    relative_x = point.x() - self.client_rect[0]
+                    relative_y = point.y() - self.client_rect[1]
                     self.ui.label_relative_pos_value.setText('%d, %d' % (relative_x, relative_y))
                 self.ui.label_rgb_value.setText('%d, %d, %d' % (r, g, b))
                 self.zoom_display()
@@ -74,9 +74,9 @@ class ColorPicker(QWidget):
         if line_edit is not None:
             x = self.current_point.x()
             y = self.current_point.y()
-            if self.bind_window_rect is not None:
-                x = x - self.bind_window_rect[0]
-                y = y - self.bind_window_rect[1]
+            if self.client_rect is not None:
+                x = x - self.client_rect[0]
+                y = y - self.client_rect[1]
             line_edit.setText('[%d, %d] (%d, %d, %d) %s' % (x, y, r, g, b, color_name))
             line_edit.setStyleSheet('QLineEdit{border:1px solid %s; color:%s; background-color:%s}'
                                     % (color_name, text_color_name, color_name))
@@ -90,10 +90,10 @@ class ColorPicker(QWidget):
     def on_window_selected(self, window_info):
         if window_info is None:
             self.ui.pushButton.setText('Select Window')
-            self.bind_window_rect = None
+            self.client_rect = None
             self.ui.label_relative_pos_value.clear()
         else:
-            self.bind_window_rect = window_info.rect
+            self.client_rect = window_info.client_rect
             title = show_title = window_info.title
             if len(title) >= 30:
                 show_title = title[:12] + ' ... ' + title[-12:]

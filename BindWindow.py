@@ -7,17 +7,17 @@ import ui_bind_window
 def get_widows_information(hwnd, window_list):
     if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(hwnd):
         title = win32gui.GetWindowText(hwnd)
-        rect = win32gui.GetWindowRect(hwnd)
-        x = rect[0]
-        y = rect[1]
+        rect = win32gui.GetClientRect(hwnd)
+        x, y = win32gui.ClientToScreen(hwnd, (rect[0], rect[1]))
+        client_rect = (x, y, rect[2], rect[3])
         if x != -32000 and y != -32000 and title != '':
-            window_list.append(WindowInformation(title, rect))
+            window_list.append(WindowInformation(title, client_rect))
 
 
 class WindowInformation:
     def __init__(self, title='', rect=()):
         self.title = title
-        self.rect = rect
+        self.client_rect = rect
 
 
 class BindWindow(QWidget):
@@ -39,7 +39,7 @@ class BindWindow(QWidget):
             if len(title) > 35:
                 show_title = title[:15] + ' ... ' + title[-15:]
             self.ui.listWidget.addItem(show_title)
-            rect = self.window_list[i].rect
+            rect = self.window_list[i].client_rect
             tooltip = title + '\n' + 'x = %d, y = %d, width = %d, height = %d' % (rect[0], rect[1], rect[2], rect[3])
             self.ui.listWidget.item(i).setToolTip(tooltip)
 
