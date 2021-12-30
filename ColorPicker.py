@@ -1,10 +1,27 @@
 # -*- coding: utf-8 -*-
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QGuiApplication, QColor, QCursor, QPainter, QPen
-from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtWidgets import QWidget, QApplication, QComboBox
 import ui_color_picker
-import BindWindow
 import win32api
+import win32gui
+
+
+def get_widows_information(hwnd, window_list):
+    if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(hwnd):
+        title = win32gui.GetWindowText(hwnd)
+        rect = win32gui.GetClientRect(hwnd)
+        x, y = win32gui.ClientToScreen(hwnd, (rect[0], rect[1]))
+        client_rect = (x, y, rect[2], rect[3])
+        if x != -32000 and y != -32000 and title != '':
+            window_list.append(WindowInformation(title, client_rect))
+
+
+class WindowInformation:
+    def __init__(self, title='', rect=()):
+        self.title = title
+        self.client_rect = rect
 
 
 class ColorPicker(QWidget):
@@ -15,8 +32,8 @@ class ColorPicker(QWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.capture_mouse)
         self.timer.start(100)
-        self.ui.pushButton.clicked.connect(self.on_push_button_clicked)
-        self.child_window = BindWindow.BindWindow(self)
+        self.ui.comboBox.currentIndexChanged.connect(self.on_window_selected)
+        self.window_list = []
         self.client_rect = None
         self.current_color = None
         self.current_point = None
@@ -45,7 +62,6 @@ class ColorPicker(QWidget):
     def zoom_display(self):
         painter = QPainter(self.pix_map)
         painter.drawPixmap(self.pix_map.rect(), self.pix_map)
-
         painter.setPen(QPen(QColor(144, 238, 144, 90), 1, Qt.SolidLine))
         painter.drawLine(0, 25, 50, 26)
         painter.drawLine(25, 0, 25, 50)
@@ -92,24 +108,33 @@ class ColorPicker(QWidget):
             line_edit.setStyleSheet('QLineEdit{border:1px solid %s; color:%s; background-color:%s}'
                                     % (color_name, text_color_name, color_name))
 
-    def on_push_button_clicked(self):
-        x = self.x() + self.width()
-        y = self.y()
-        self.child_window.move(x, y)
-        self.child_window.show()
+    def get_window_list(self):
+        self.window_list.clear()
+        win32gui.EnumWindows(get_widows_information, self.window_list)
+        self.ui.comboBox.clear()
+        index = 0
+        for window in self.window_list:
+            title = show_title = window.title
+            if len(title) > 35:
+                show_title = title[:35] + ' ... '
+            rect = window.client_rect
+            tooltip = 'Window Title:\n   ' + title + '\nWindow Rect:\n   ' \
+                      + 'x = %d, y = %d, width = %d, height = %d' \
+                      % (rect[0], rect[1], rect[2], rect[3])
+            self.ui.comboBox.addItem(show_title)
+            self.ui.comboBox.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
+            index += 1
+        self.ui.comboBox.setCurrentIndex(-1)
 
-    def on_window_selected(self, window_info):
-        if window_info is None:
-            self.ui.pushButton.setText('Select Window')
+    def on_window_selected(self):
+        index = self.ui.comboBox.currentIndex()
+        if index == -1:
             self.client_rect = None
             self.ui.label_relative_pos_value.clear()
         else:
-            self.client_rect = window_info.client_rect
-            title = show_title = window_info.title
-            if len(title) >= 30:
-                show_title = title[:12] + ' ... ' + title[-12:]
-            self.ui.pushButton.setText(show_title)
+            window = self.window_list[index]
+            self.client_rect = window.client_rect
 
-    def closeEvent(self, close_event):
-        self.child_window.close()
+
+
 
