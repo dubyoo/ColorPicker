@@ -11,16 +11,18 @@ import win32gui
 def get_widows_information(hwnd, window_list):
     if win32gui.IsWindow(hwnd) and win32gui.IsWindowEnabled(hwnd) and win32gui.IsWindowVisible(hwnd):
         title = win32gui.GetWindowText(hwnd)
+        class_name = win32gui.GetClassName(hwnd)
         rect = win32gui.GetClientRect(hwnd)
         x, y = win32gui.ClientToScreen(hwnd, (rect[0], rect[1]))
         client_rect = (x, y, rect[2], rect[3])
         if x != -32000 and y != -32000 and title != '':
-            window_list.append(WindowInformation(title, client_rect))
+            window_list.append(WindowInformation(title, class_name, client_rect))
 
 
 class WindowInformation:
-    def __init__(self, title='', rect=()):
+    def __init__(self, title='', class_name='', rect=()):
         self.title = title
+        self.class_name = class_name
         self.client_rect = rect
 
 
@@ -118,8 +120,9 @@ class ColorPicker(QWidget):
             if len(title) > 35:
                 show_title = title[:35] + ' ... '
             rect = window.client_rect
-            tooltip = 'Window Title:\n   ' + title + '\nWindow Rect:\n   ' \
-                      + 'x = %d, y = %d, width = %d, height = %d' \
+            tooltip = 'Window Title:\n    ' + title + \
+                      '\nWindow Class Name:\n    ' + window.class_name + \
+                      '\nWindow Client Rect:\n    ' + 'x = %d, y = %d, width = %d, height = %d' \
                       % (rect[0], rect[1], rect[2], rect[3])
             self.ui.comboBox.addItem(show_title)
             self.ui.comboBox.setItemData(index, tooltip, QtCore.Qt.ToolTipRole)
